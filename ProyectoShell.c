@@ -16,6 +16,29 @@ Para salir del programa en ejecuci�n, pulsar Control+D
 #define MAX_LINE 256 // 256 caracteres por l�nea para cada comando es suficiente
 #include <string.h>  // Para comparar cadenas de cars. (a partir de la tarea 2)
 
+job *tarea;
+
+void manejador(int senal){
+  job *item;
+  int status, info;
+  int pid_wait = 0;
+  enum status status_res;
+
+  for(int i=1; i<=list_size(tarea); i++){
+    item = get_item_bypos(tarea,i);
+    pid_wait = waitpid(item->pgid, &status, WUNTRACED || WNOHANG);
+    if(pid_wait == item->pgid){
+      status_res = analyze_status(status, &info);
+      if(status_res == SUSPENDIDO){
+        printf("Comando %s ejecutado en segundo plano con PID %d ha suspendido ha su ejecución", item->command, item->pgid);
+        item->ground = DETENIDO;
+      } else if(status_res == FINALIZADO){
+        printf("Comando %s ejecutado en segundo plano con PID %d ha suspendido ha concluido", item->command, item->pgid);
+        delete_job(tarea,item);
+      }
+    }
+  }
+}
 // --------------------------------------------
 //                     MAIN          
 // --------------------------------------------
@@ -31,7 +54,10 @@ int main(void)
       enum status status_res; // Estado procesado por analyze_status()
       int info;		      // Informaci�n procesada por analyze_status()
 
+      job *item;
       ignore_terminal_signals();
+      signal(SIGCHLD, manejador);
+      new_list("Tareas");
 
       while (1) // El programa termina cuando se pulsa Control+D dentro de get_command()
       {   		
@@ -63,6 +89,8 @@ int main(void)
       set_terminal(getpid());
       status_res = analyze_status(status, &info);
       if(status_res == SUSPENDIDO){
+        item = new_job(pid_fork, args[0], DETENIDO);
+      add_job(tarea,item);
         printf("\nComando %s ejecutado en primer plano con pid %d. Estado %s. Info: %d.\n",args[0], pid_fork, status_strings[status_res], info);
       } else if (status_res == FINALIZADO){
         if(info != 255){
@@ -70,6 +98,8 @@ int main(void)
         }
       }
     } else {
+      item = new_job(pid_fork, args[0], SEGUNDOPLANO);
+      add_job(tarea,item);
        printf("\nComando %s ejecutado en segundo plano con pid %d.\n", args[0], pid_fork);
     }
    } else {
