@@ -31,6 +31,8 @@ int main(void)
       enum status status_res; // Estado procesado por analyze_status()
       int info;		      // Informaci�n procesada por analyze_status()
 
+      ignore_terminal_signals();
+
       while (1) // El programa termina cuando se pulsa Control+D dentro de get_command()
       {   		
         printf("COMANDO->");
@@ -56,7 +58,7 @@ int main(void)
    pid_fork = fork();
 
    if (pid_fork > 0) {
-     if(background == 0){
+    if(background == 0){
       waitpid(pid_fork,&status, WUNTRACED);
       set_terminal(getpid());
       status_res = analyze_status(status, &info);
@@ -66,18 +68,23 @@ int main(void)
         if(info != 255){
           printf("\nComando %s ejecutado en primer plano con pid %d. Estado %s. Info: %d.\n",args[0], pid_fork, status_strings[status_res], info);
         }
-      } else {
+      }
+    } else {
        printf("\nComando %s ejecutado en segundo plano con pid %d.\n", args[0], pid_fork);
-     }
-     
-
+    }
    } else {
+     
+     new_process_group(getpid());
+     if(background == 0) {
+       set_terminal(getpid());
+     }
+     restore_terminal_signals();
      execvp(args[0], args);
      printf("\nError. Comando %s no encontrado\n", args[0]);
      exit(-1);
    }
   } // end while
 }
-}
+
 
 
