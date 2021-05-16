@@ -19,6 +19,7 @@ Para salir del programa en ejecuci�n, pulsar Control+D
 job *tarea;
 
 void manejador(int senal){
+  block_SIGCHLD();
   job *item;
   int status, info;
   int pid_wait = 0;
@@ -38,6 +39,7 @@ void manejador(int senal){
       }
     }
   }
+  unblock_SIGCHLD();
 }
 // --------------------------------------------
 //                     MAIN          
@@ -79,6 +81,37 @@ int main(void)
    if(!strcmp(args[0],"logout")){
      exit(0);
    }
+   if(!strcmp(args[0],"jobs")){
+     print_job_list(tarea);
+     continue;
+   }
+   if(!strcmp(args[0],"bg")){
+     int pos = 1;
+     if(args[1] != NULL){
+       pos = atoi(args[1]);
+     }
+     item = get_item_bypos(tarea,pos);
+     if((item != NULL) && (item->ground == DETENIDO)){
+       item->ground = SEGUNDOPLANO;
+       killpg(item->pgid,SIGCONT);
+     }
+     continue;
+   }
+   if(!strcmp(args[0],"fg")){
+     int pos = 1;
+     if(args[1] != NULL){
+       pos = atoi(args[1]);
+     }
+     item = get_item_bypos(tarea,pos);
+     if(item != NULL){
+       set_terminal(item->pgid);
+       if(item->ground == DETENIDO){
+         killpg(item->pgid,SIGCONT);
+       }
+       delete_job(tarea,item);
+     }
+     continue;
+   }
 
 
    pid_fork = fork();
@@ -89,18 +122,22 @@ int main(void)
       set_terminal(getpid());
       status_res = analyze_status(status, &info);
       if(status_res == SUSPENDIDO){
+        block_SIGCHLD();
         item = new_job(pid_fork, args[0], DETENIDO);
-      add_job(tarea,item);
+        add_job(tarea,item);
         printf("\nComando %s ejecutado en primer plano con pid %d. Estado %s. Info: %d.\n",args[0], pid_fork, status_strings[status_res], info);
+        unblock_SIGCHLD();
       } else if (status_res == FINALIZADO){
         if(info != 255){
           printf("\nComando %s ejecutado en primer plano con pid %d. Estado %s. Info: %d.\n",args[0], pid_fork, status_strings[status_res], info);
         }
       }
     } else {
+      block_SIGCHLD();
       item = new_job(pid_fork, args[0], SEGUNDOPLANO);
       add_job(tarea,item);
        printf("\nComando %s ejecutado en segundo plano con pid %d.\n", args[0], pid_fork);
+       unblock_SIGCHLD();
     }
    } else {
      
