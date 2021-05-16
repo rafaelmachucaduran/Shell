@@ -30,10 +30,10 @@ void manejador(int senal){
     if(pid_wait == item->pgid){
       status_res = analyze_status(status, &info);
       if(status_res == SUSPENDIDO){
-        printf("Comando %s ejecutado en segundo plano con PID %d ha suspendido ha su ejecución", item->command, item->pgid);
+        printf("\nComando %s ejecutado en segundo plano con PID %d ha suspendido ha su ejecución\n", item->command, item->pgid);
         item->ground = DETENIDO;
       } else if(status_res == FINALIZADO){
-        printf("Comando %s ejecutado en segundo plano con PID %d ha suspendido ha concluido", item->command, item->pgid);
+        printf("\nComando %s ejecutado en segundo plano con PID %d ha suspendido ha concluido\n", item->command, item->pgid);
         delete_job(tarea,item);
       }
     }
