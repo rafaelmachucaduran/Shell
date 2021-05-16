@@ -57,6 +57,8 @@ int main(void)
       int info;		      // Informaci�n procesada por analyze_status()
 
       job *item;
+      int primerplano = 0;
+
       ignore_terminal_signals();
       signal(SIGCHLD, manejador);
       tarea = new_list("tarea");
@@ -82,10 +84,13 @@ int main(void)
      exit(0);
    }
    if(!strcmp(args[0],"jobs")){
+     block_SIGCHLD();
      print_job_list(tarea);
+     unblock_SIGCHLD();
      continue;
    }
    if(!strcmp(args[0],"bg")){
+     block_SIGCHLD();
      int pos = 1;
      if(args[1] != NULL){
        pos = atoi(args[1]);
@@ -95,10 +100,13 @@ int main(void)
        item->ground = SEGUNDOPLANO;
        killpg(item->pgid,SIGCONT);
      }
+     unblock_SIGCHLD();
      continue;
    }
    if(!strcmp(args[0],"fg")){
+     block_SIGCHLD();
      int pos = 1;
+     primerplano = 1;
      if(args[1] != NULL){
        pos = atoi(args[1]);
      }
@@ -108,13 +116,13 @@ int main(void)
        if(item->ground == DETENIDO){
          killpg(item->pgid,SIGCONT);
        }
+       pid_fork = item->pgid;
        delete_job(tarea,item);
      }
-     continue;
+     unblock_SIGCHLD();
    }
 
-
-   pid_fork = fork();
+   if(!primerplano) pid_fork = fork();
 
    if (pid_fork > 0) {
     if(background == 0){
@@ -132,6 +140,7 @@ int main(void)
           printf("\nComando %s ejecutado en primer plano con pid %d. Estado %s. Info: %d.\n",args[0], pid_fork, status_strings[status_res], info);
         }
       }
+      primerplano = 0;
     } else {
       block_SIGCHLD();
       item = new_job(pid_fork, args[0], SEGUNDOPLANO);
