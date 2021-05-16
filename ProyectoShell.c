@@ -57,7 +57,7 @@ int main(void)
       job *item;
       ignore_terminal_signals();
       signal(SIGCHLD, manejador);
-      new_list("Tareas");
+      tarea = new_list("tarea");
 
       while (1) // El programa termina cuando se pulsa Control+D dentro de get_command()
       {   		
