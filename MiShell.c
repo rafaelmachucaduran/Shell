@@ -40,7 +40,7 @@ void manejador_signal(int signal) {
                 printf("Ejecutado en segundo plano. Comando: %s. PID %d. Ha suspendido su ejecucion\n", item->command, item->pgid);
                 item -> ground = DETENIDO;
             } else if(status_res == FINALIZADO){
-                printf("Ejecutado en segundo plano Comando: %s. PID %d. Ha concluido su ejecucion\n", item -> command, item->pgid);
+                printf("Ejecutado en segundo plano Comando: %s. PID %d. Ha concluido su ejecucion\n", item->command, item->pgid);
                 delete_job(tasks, item);
             }
         }
