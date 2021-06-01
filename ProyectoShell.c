@@ -31,10 +31,10 @@ void manejador(int senal){
     if(pid_wait == item->pgid){
       status_res = analyze_status(status, &info);
       if(status_res == SUSPENDIDO){
-        printf("\nComando %s ejecutado en segundo plano con PID %d ha suspendido ha su ejecución\n", item->command, item->pgid);
+        printf("\nComando %s ejecutado en segundo plano con PID %d ha suspendido su ejecución\n", item->command, item->pgid);
         item->ground = DETENIDO;
       } else if(status_res == FINALIZADO){
-        printf("\nComando %s ejecutado en segundo plano con PID %d ha suspendido ha concluido\n", item->command, item->pgid);
+        printf("\nComando %s ejecutado en segundo plano con PID %d ha concluido\n", item->command, item->pgid);
         delete_job(tarea,item);
       }
     }
@@ -154,9 +154,12 @@ int main(void)
      if(background == 0) {
        set_terminal(getpid());
      }
+     waitpid(pid_fork,&status, WUNTRACED);
+     status_res = analyze_status(status, &info);
      restore_terminal_signals();
      execvp(args[0], args);
-     printf("\nError. Comando %s no encontrado\n", args[0]);
+     
+     printf("\nError. Comando %s no encontrado\n\nComando %s ejecutado en primer plano con pid %d. Estado %s. Info: %d.\n", args[0],args[0], pid_fork, status_strings[status_res], info);
      exit(-1);
    }
   } // end while
